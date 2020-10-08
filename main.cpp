@@ -1,8 +1,9 @@
 #include <iostream>
 #include <string>
 #include <vector>
+
 std::vector<long long> CountOddOrEvenPals(std::vector<long long>& palindromsNum, const std::string& text, bool isOdd) {
-    int size = text.size();
+    auto size = text.size();
     
     long long evenIndex = isOdd ? 0 : 1;
     long long left = 0;
@@ -31,13 +32,13 @@ std::vector<long long> CountOddOrEvenPals(std::vector<long long>& palindromsNum,
 }
 
 long long CountPalindroms(const std::string& text) {
-    int size = text.size();
+    auto size = text.size();
     
-    std::vector<long long> oddPalindromsNum(size, 0);
-    std::vector<long long> evenPalindromsNum(size, 0);
+    std::vector<long long> oddPalindromsNum(size);
+    std::vector<long long> evenPalindromsNum(size);
     
-    CountOddOrEvenPals(oddPalindromsNum, text, true);
-    CountOddOrEvenPals(evenPalindromsNum, text, false);
+    oddPalindromsNum = CountOddOrEvenPals(oddPalindromsNum, text, true);
+    evenPalindromsNum = CountOddOrEvenPals(evenPalindromsNum, text, false);
     
     long long numberOfPalindroms = 0;
     for (long long i = 0; i < size; ++i) {
