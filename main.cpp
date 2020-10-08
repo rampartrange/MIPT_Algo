@@ -2,32 +2,42 @@
 #include <vector>
 #include <string>
 
-std::vector<int> FindEachSampleOccurrence(const std::string& sample, const std::string& text) {
-    std::string textWithSample = sample + "#" + text;
-    int size = textWithSample.size();
+const char SEPARATOR = '#';
+
+const std::vector<int>& CalculateZFunction(const std::string& sample, std::vector<int>& zFunction) {
+
+    auto size = sample.size();
     
-    std::vector<int> zFuction(size, 0);
+    int leftBorder = 0, rightBorder = 0;
     
-    int l = 0, r = 0;
-    
-    for (int i = 1; i < size; ++i) {
-        if (i < r) {
-            zFuction[i] = std::min(zFuction[i-l], r - i);
+    for (auto i = 1; i < size; ++i) {
+        if (i < rightBorder) {
+            zFunction[i] = std::min(zFunction[i - leftBorder], rightBorder - i);
         }
-            while (textWithSample[i + zFuction[i]] == textWithSample[zFuction[i]]) {
-                ++zFuction[i];
+            while (sample[i + zFunction[i]] == sample[zFunction[i]]) {
+                ++zFunction[i];
             }
-            if (i + zFuction[i] > r) {
-                l = i;
-                r = i + zFuction[i];
+            if (i + zFunction[i] > rightBorder) {
+                leftBorder = i;
+                leftBorder = i + zFunction[i];
             }
     }
     
-    std::vector<int> occurrences;
-    int sampleSize = sample.size();
+    return zFunction;
+}
+
+std::vector<int> FindEachSampleOccurrence(const std::string& sample, const std::string& text) {
+    std::string textWithSample = sample + SEPARATOR + text;
+    auto size = textWithSample.size();
     
-    for (int i = 0; i < size; ++i) {
-        if (zFuction[i] == sampleSize) {
+    std::vector<int> zFunction(size);
+    zFunction = CalculateZFunction(textWithSample, zFunction);
+    
+    std::vector<int> occurrences;
+    auto sampleSize = sample.size();
+    
+    for (auto i = 0; i < size; ++i) {
+        if (zFunction[i] == sampleSize) {
             occurrences.push_back(i - sampleSize - 1);
         }
     }
