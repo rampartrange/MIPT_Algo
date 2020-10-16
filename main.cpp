@@ -4,9 +4,10 @@
 
 const char SEPARATOR = '#';
 
-const std::vector<int>& CalculateZFunction(const std::string& sample, std::vector<int>& zFunction) {
+const std::vector<int>& CalculateZFunction(const std::string& sample) {
 
     auto size = sample.size();
+    std::vector<int> zFunction(size);
     
     int leftBorder = 0, rightBorder = 0;
     
@@ -30,8 +31,7 @@ std::vector<int> FindEachSampleOccurrence(const std::string& sample, const std::
     std::string textWithSample = sample + SEPARATOR + text;
     auto size = textWithSample.size();
     
-    std::vector<int> zFunction(size);
-    zFunction = CalculateZFunction(textWithSample, zFunction);
+    std::vector<int> zFunction = CalculateZFunction(textWithSample);
     
     std::vector<int> occurrences;
     auto sampleSize = sample.size();
