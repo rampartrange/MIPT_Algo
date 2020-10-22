@@ -10,7 +10,7 @@ std::vector<long long> CountOddOrEvenPals(const std::string& text, bool isOdd) {
     long long left = 0;
     long long right = -1;
     
-    for (long long i = 0; i < size; ++i) {
+    for (int i = 0; i < size; ++i) {
         long long lengthOfPalWithCenterInI = 0;
         
         if (i <= right) {
@@ -39,7 +39,7 @@ long long CountPalindroms(const std::string& text) {
     std::vector<long long> evenPalindromsNum = CountOddOrEvenPals(text, false);
     
     long long numberOfPalindroms = 0;
-    for (long long i = 0; i < size; ++i) {
+    for (int i = 0; i < size; ++i) {
         numberOfPalindroms += oddPalindromsNum[i] + evenPalindromsNum[i];
     }
     
