@@ -49,10 +49,9 @@ CTrie::SVertex::SVertex(SVertex* parent, char parentChar) : parent(parent), pare
 
 CTrie::SVertex::~SVertex() {
 
-    for (auto vertex : children) {
-        delete vertex.second;
+    for (const auto& [key, node] : children) {
+        delete node;
     }
-    children.clear();
 }
 
 CTrie::CTrie(const std::vector<std::string>& samples, const std::vector<int>& startSamplePositions) :
