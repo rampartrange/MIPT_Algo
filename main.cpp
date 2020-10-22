@@ -2,19 +2,20 @@
 #include <vector>
 #include <string>
 #include <unordered_map>
+#include <string_view>
 
 
 class CTrie {
 public:
-    CTrie(const std::vector<std::string>& samples, const std::vector<int>& startSamplePositions);
+    CTrie(const std::vector<std::string_view>& samples, const std::vector<int>& startSamplePositions);
     std::vector<int> GetEachEntryInText(const std::string& sample, const std::string& text);
     ~CTrie();
 private:
     struct SVertex;
     
-    void AddString(const std::string& sample, int sampleNum);
+    void AddString(const std::string_view& sample, int sampleNum);
     std::vector<int> startSamplePositions;
-    std::vector<std::string> samples;
+    std::vector<std::string_view> samples;
     SVertex* SuffLink(SVertex* v);
     SVertex* Transition(SVertex* v, char move);
     SVertex* GetUp(SVertex* v);
@@ -54,7 +55,7 @@ CTrie::SVertex::~SVertex() {
     }
 }
 
-CTrie::CTrie(const std::vector<std::string>& samples, const std::vector<int>& startSamplePositions) :
+CTrie::CTrie(const std::vector<std::string_view>& samples, const std::vector<int>& startSamplePositions) :
              samples(samples), startSamplePositions(startSamplePositions) {
     root = new SVertex(NULL, '#');
     int sampleNum = 0;
@@ -72,7 +73,7 @@ CTrie::~CTrie() {
     delete root;
 }
 
-void CTrie::AddString(const std::string& sample, int sampleNum) {
+void CTrie::AddString(const std::string_view& sample, int sampleNum) {
     SVertex* currentVertex = root;
     auto size = sample.size();
     for (int i = 0; i < size; ++i) {
@@ -170,24 +171,30 @@ std::vector<int> CTrie::GetEachEntryInText(const std::string& sample, const std:
     return answer;
 }
 
-std::vector<std::string> ParseSample(std::string& sample, std::vector<int>& startSamplePositions) {
-    std::vector<std::string> parsedSample;
-    std::string currentSubstring;
+std::vector<std::string_view> ParseSample(std::string& sample, std::vector<int>& startSamplePositions) {
+    std::vector<std::string_view> parsedSample;
+    std::string_view currentSubstring = sample;
     auto size = sample.size();
+    size_t pos = 0;
+    size_t count = 0;
     for (auto i = 0; i < size; ++i) {
         if (sample[i] != '?') {
-            currentSubstring += sample[i];
-        } else if (!currentSubstring.empty()){
-            parsedSample.emplace_back(currentSubstring);
-            startSamplePositions.push_back(i - currentSubstring.size());
-            currentSubstring.clear();
+            if (count == 0) {
+                pos = i;
+            }
+            count += 1;
+        } else if (count){
+            parsedSample.emplace_back(currentSubstring.substr(pos, count));
+            startSamplePositions.push_back(pos);
+            count = 0;
+            
             
         }
     }
     
-    if (!currentSubstring.empty()) {
-        parsedSample.emplace_back(currentSubstring);
-        startSamplePositions.push_back(size - currentSubstring.size());
+    if (count) {
+        parsedSample.emplace_back(currentSubstring.substr(pos, count));
+        startSamplePositions.push_back(pos);
     }
     
     if (startSamplePositions.empty()) {
@@ -204,7 +211,7 @@ int main() {
     std::getline(std::cin, text);
     
     std::vector<int> startSamplePositions;
-    std::vector<std::string> parsedSample = ParseSample(sample, startSamplePositions);
+    std::vector<std::string_view> parsedSample = ParseSample(sample, startSamplePositions);
     CTrie trie(parsedSample, startSamplePositions);
 
     for (auto pos : trie.GetEachEntryInText(sample, text)) {
