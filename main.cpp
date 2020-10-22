@@ -3,38 +3,6 @@
 #include <string>
 #include <unordered_map>
 
-struct SVertex {
-    SVertex(SVertex* parent, char parentChar);
-    ~SVertex();
-    
-    SVertex* parent;
-    char parentChar;
-
-    SVertex* suffLink;
-    SVertex* up;
-    
-    std::unordered_map<char, SVertex*> vertices;
-    std::unordered_map<char, SVertex*> transitions;
-    std::vector<int> sampleNums;
-    
-    bool isTerminal;
-    
-    static const int alphabetSize;
-    static const std::string alphabet;
-};
-
-const int SVertex::alphabetSize = 26;
-const std::string SVertex::alphabet = "abcdefghijklmnopqrstuvwxyz";
-
-SVertex::SVertex(SVertex* parent, char parentChar) : parent(parent), parentChar(parentChar), isTerminal(false), suffLink(NULL), up(NULL) {};
-
-SVertex::~SVertex() {
-
-    for (auto vertex : vertices) {
-        delete vertex.second;
-    }
-    vertices.clear();
-}
 
 class CTrie {
 public:
@@ -42,6 +10,8 @@ public:
     std::vector<int> GetEachEntryInText(const std::string& sample, const std::string& text);
     ~CTrie();
 private:
+    struct SVertex;
+    
     void AddString(const std::string& sample, int sampleNum);
     std::vector<int> startSamplePositions;
     std::vector<std::string> samples;
@@ -52,6 +22,38 @@ private:
     SVertex* root;
     
 };
+
+struct CTrie::SVertex {
+    SVertex(SVertex* parent, char parentChar);
+    ~SVertex();
+    
+    SVertex* parent;
+    char parentChar;
+
+    SVertex* suffLink;
+    SVertex* up;
+    
+    std::unordered_map<char, SVertex*> children;
+    std::unordered_map<char, SVertex*> transitions;
+    std::vector<int> sampleNums;
+    
+    bool isTerminal;
+    
+    static const std::string alphabet;
+};
+
+const std::string CTrie::SVertex::alphabet = "abcdefghijklmnopqrstuvwxyz";
+
+CTrie::SVertex::SVertex(SVertex* parent, char parentChar) : parent(parent), parentChar(parentChar),
+                                                            isTerminal(false), suffLink(NULL), up(NULL) {};
+
+CTrie::SVertex::~SVertex() {
+
+    for (auto vertex : children) {
+        delete vertex.second;
+    }
+    children.clear();
+}
 
 CTrie::CTrie(const std::vector<std::string>& samples, const std::vector<int>& startSamplePositions) :
              samples(samples), startSamplePositions(startSamplePositions) {
@@ -75,16 +77,16 @@ void CTrie::AddString(const std::string& sample, int sampleNum) {
     SVertex* currentVertex = root;
     auto size = sample.size();
     for (int i = 0; i < size; ++i) {
-        if (currentVertex->vertices.find(sample[i]) == currentVertex->vertices.end()) {
-            currentVertex->vertices[sample[i]] = new SVertex(currentVertex, sample[i]);
+        if (currentVertex->children.find(sample[i]) == currentVertex->children.end()) {
+            currentVertex->children[sample[i]] = new SVertex(currentVertex, sample[i]);
         }
-        currentVertex = currentVertex->vertices[sample[i]];
+        currentVertex = currentVertex->children[sample[i]];
     }
     currentVertex->sampleNums.push_back(sampleNum);
     currentVertex->isTerminal = true;
 }
 
-SVertex* CTrie::SuffLink(SVertex* v) {
+CTrie::SVertex* CTrie::SuffLink(SVertex* v) {
     if (v->suffLink == NULL) {
         if (v == root || v->parent == root) {
             v->suffLink = root;
@@ -95,10 +97,10 @@ SVertex* CTrie::SuffLink(SVertex* v) {
     return v->suffLink;
 }
 
-SVertex* CTrie::Transition(SVertex *v, char move) {
+CTrie::SVertex* CTrie::Transition(SVertex *v, char move) {
     if (v->transitions.find(move) == v->transitions.end()) {
-        if (v->vertices.find(move) != v->vertices.end()) {
-            v->transitions[move] = v->vertices[move];
+        if (v->children.find(move) != v->children.end()) {
+            v->transitions[move] = v->children[move];
         } else if (v == root) {
             v->transitions[move] = root;
         } else {
@@ -108,7 +110,7 @@ SVertex* CTrie::Transition(SVertex *v, char move) {
     return v->transitions[move];
 }
 
-SVertex* CTrie::GetUp(SVertex *v) {
+CTrie::SVertex* CTrie::GetUp(SVertex *v) {
     if (v->up == NULL) {
         if (SuffLink(v)->isTerminal) {
             v->up = SuffLink(v);
