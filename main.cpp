@@ -156,8 +156,7 @@ std::vector<int> CTrie::GetEachEntryInText(const std::string& sample, const std:
                     }
                 }
             }
-        }
-
+        } 
     }
     if (samples.empty()) {
         return answer;
@@ -187,8 +186,6 @@ std::vector<std::string_view> ParseSample(std::string& sample, std::vector<int>&
             parsedSample.emplace_back(currentSubstring.substr(pos, count));
             startSamplePositions.push_back(pos);
             count = 0;
-            
-            
         }
     }
     
