@@ -5,11 +5,13 @@
 
 class CSuffixArray {
 public:
-    CSuffixArray(const std::string&);
+    explicit CSuffixArray(const std::string&);
     ~CSuffixArray() = default;
     
     std::vector<int> GetSuffixArray() const;
     std::vector<int> BuildLcp() const;
+    
+    int CountUniqueSubstrings(const std::string& text);
     
 private:
     void Build(int);
@@ -26,7 +28,7 @@ const int CSuffixArray::alphabetLen = 128;
 CSuffixArray::CSuffixArray(const std::string& text) : text(text) {
     auto size = this->text.size();
     for (auto i = 0; i < size; ++i) {
-        suffixArray.push_back(i);
+        suffixArray.emplace_back(i);
     }
     classes.resize(size);
     
@@ -38,15 +40,15 @@ int CSuffixArray::SeparateToClasses() {
     std::vector<int> cnt(alphabetLen);
     auto size = text.size();
     for (int i = 0; i < size; ++i) {
-        ++cnt[(int)text[i]];
+        ++cnt[static_cast<int>(text[i])];
     }
     
     for (int i = 1; i < alphabetLen; ++i) {
-        cnt[i] += cnt[i-1];
+        cnt[i] += cnt[i - 1];
     }
     
     for (int i = 0; i < size; ++i) {
-        suffixArray[--cnt[(int)text[i]]] = i;
+        suffixArray[--cnt[static_cast<int>(text[i])]] = i;
     }
     
     classes[suffixArray[0]] = 0;
@@ -105,7 +107,6 @@ std::vector<int> CSuffixArray::BuildLcp() const{
     for (int i = 0; i < size; ++i) {
         reverseSuffixArray[suffixArray[i]] = i;
     }
-    
     int k = 0;
     for (int i = 0; i < size; ++i) {
         if (k > 0) {
@@ -131,7 +132,7 @@ std::vector<int> CSuffixArray::GetSuffixArray() const{
     return suffixArray;
 }
 
-int CountUniqueSubstrings(const std::string& text) {
+int CSuffixArray::CountUniqueSubstrings(const std::string& text) {
     CSuffixArray suffArr(text);
     std::vector<int> lcp = suffArr.BuildLcp();
     auto size = text.size();
@@ -144,9 +145,11 @@ int CountUniqueSubstrings(const std::string& text) {
     }
     return answer;
 }
+
 int main() {
     std::string text;
     std::getline(std::cin, text);
-    std::cout << CountUniqueSubstrings(text) << std::endl;
+    CSuffixArray suffixArray(text);
+    std::cout << suffixArray.CountUniqueSubstrings(text) << std::endl;
     return 0;
 }
