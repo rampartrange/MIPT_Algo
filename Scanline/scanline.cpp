@@ -4,6 +4,7 @@
 #include <cmath>
 #include <iomanip>
 #include <algorithm>
+#include <optional>
 #include <set>
 
 const long double EPSILON = 0.00001;
@@ -25,23 +26,7 @@ public:
     Point(const Point&);
     
     Point& operator=(const Point&);
-    
-    friend bool operator ==(const Point&, const Point&);
-    friend bool operator !=(const Point&, const Point&);
-    
-    friend bool operator <(const Point&, const Point&);
-    friend bool operator >(const Point&, const Point&);
-    friend bool operator <=(const Point&, const Point&);
-    friend bool operator >=(const Point&, const Point&);
-    
-    friend Point& operator+=(Point&, const Point&);
-    friend Point operator+(const Point&, const Point&);
-    
-    friend Point& operator-=(Point&, const Point&);
-    friend Point operator-(const Point&, const Point&);
-    
-    friend std::ostream &operator<<(std::ostream &output, const Point& point);
-    friend std::istream &operator>>(std::istream &input, const Point& point);
+
     
     long long x;
     long long y;
@@ -81,30 +66,6 @@ bool operator >=(const Point& lhs, const Point& rhs) {
     return !(lhs < rhs);
 }
 
-Point& operator+=(Point& lhs, const Point& rhs) {
-    lhs.x += rhs.x;
-    lhs.y += rhs.y;
-    return lhs;
-}
-
-Point operator+(const Point& lhs, const Point& rhs) {
-    Point result = lhs;
-    result += rhs;
-    return result;
-}
-
-Point& operator-=(Point& lhs, const Point& rhs) {
-    lhs.x -= rhs.x;
-    lhs.y -= rhs.y;
-    return lhs;
-}
-
-Point operator-(const Point& lhs, const Point& rhs) {
-    Point result = lhs;
-    result -= rhs;
-    return result;
-}
-
 long double DistanceBetweenPoints(const Point& lhs, const Point& rhs) {
     return sqrt((rhs.x - lhs.x) *(rhs.x - lhs.x) +
                (rhs.y - lhs.y) *(rhs.y - lhs.y));
@@ -120,12 +81,59 @@ std::ostream &operator<<(std::ostream &output, const Point& point) {
     return output;
 }
 
-long long CrossProduct(const Point& first, const Point& second) {
-    return first.x * second.y - second.x * first.y;
+class Vector {
+public:
+    Vector(long long, long long);
+    Vector(const Point&, const Point&);
+    Vector& operator=(const Vector& rhs);
+    
+    static long long CrossProduct(const Vector& first, const Vector& second);
+    
+    long long x;
+    long long y;
+};
+
+Vector::Vector(long long x, long long y) : x(x), y(y) {};
+Vector::Vector(const Point& lhs, const Point& rhs) : x(rhs.x - lhs.x), y(rhs.y - lhs.y) {};
+
+long long Vector::CrossProduct(const Vector& lhs, const Vector& rhs) {
+    return lhs.x * rhs.y - rhs.x * lhs.y;
+}
+
+Vector& Vector::operator=(const Vector& rhs) {
+    x = rhs.x;
+    y = rhs.y;
+    return(*this);
+}
+
+Vector& operator+=(Vector& lhs, const Vector& rhs) {
+    lhs.x += rhs.x;
+    lhs.y += rhs.y;
+    return lhs;
+}
+
+Vector operator+(const Vector& lhs, const Vector& rhs) {
+    Vector result = lhs;
+    result += rhs;
+    return result;
+}
+
+Vector& operator-=(Vector& lhs, const Vector& rhs) {
+    lhs.x -= rhs.x;
+    lhs.y -= rhs.y;
+    return lhs;
+}
+
+Vector operator-(const Vector& lhs, const Vector& rhs) {
+    Vector result = lhs;
+    result -= rhs;
+    return result;
 }
 
 Turn Orientation(const Point& first, const Point& second, const Point& third) {
-    double turn = CrossProduct(second - first, third - first);
+    Vector lhs(first, second);
+    Vector rhs(first, third);
+    double turn = Vector::CrossProduct(lhs, rhs);
     if(turn > EPSILON) {
         return LEFT;
     }
@@ -136,8 +144,9 @@ Turn Orientation(const Point& first, const Point& second, const Point& third) {
 }
 
 long long OrientedArea(const Point& first, const Point& second, const Point& third) {
-    
-    return CrossProduct(second - first, third - first);
+    Vector lhs(first, second);
+    Vector rhs(first, third);
+    return Vector::CrossProduct(lhs, rhs);
 }
  
 bool AreProjectionsIntersect(long long firstStart, long long  firstEnd, long long secondStart, long long  secondEnd) {
@@ -173,7 +182,7 @@ bool AreSegmentsCross(const Segment& lhs, const Segment& rhs) {
 }
 
 long double Segment::GetYForCmp(long long x) const{
-    Point vec = end - start;
+    Vector vec(start, end);
     if (vec.x == 0) {
         return static_cast<long double>(start.y);
     }
@@ -206,7 +215,7 @@ bool operator!=(const Segment& lhs, const Segment& rhs) {
     return !(lhs == rhs);
 }
 
-enum TypeOfPoint {
+enum class TypeOfPoint : int {
     START = 1,
     END = -1
 };
@@ -234,7 +243,8 @@ std::set<Segment>::iterator Prev(const std::set<Segment>& status, std::set<Segme
     return (it == status.begin()) ? status.end() : --it;
 }
 
-std::pair<long long, long long> FindIntersection(const std::vector<Segment>& segments) {
+
+std::optional<Point> FindIntersection(const std::vector<Segment>& segments) {
     auto size = segments.size();
     std::vector<Event> events;
     std::set<Segment> status;
@@ -242,11 +252,11 @@ std::pair<long long, long long> FindIntersection(const std::vector<Segment>& seg
     
     for (auto i = 0; i < size; ++i) {
         if (segments[i].start < segments[i].end) {
-            events.emplace_back(segments[i].start.x, START, i);
-            events.emplace_back(segments[i].end.x, END, i);
+            events.emplace_back(segments[i].start.x, TypeOfPoint::START, i);
+            events.emplace_back(segments[i].end.x, TypeOfPoint::END, i);
         } else {
-            events.emplace_back(segments[i].end.x, START, i);
-            events.emplace_back(segments[i].start.x, END, i);
+            events.emplace_back(segments[i].end.x, TypeOfPoint::START, i);
+            events.emplace_back(segments[i].start.x, TypeOfPoint::END, i);
         }
     }
     
@@ -256,16 +266,16 @@ std::pair<long long, long long> FindIntersection(const std::vector<Segment>& seg
     for (auto i = 0; i < eventsSize; ++i) {
         int index = events[i].index;
         
-        if (events[i].type == START) {
+        if (events[i].type == TypeOfPoint::START) {
             auto next = status.lower_bound(segments[index]);
             auto prev = Prev(status, next);
             
             if (next != status.end() && AreSegmentsCross((*next), segments[index])) {
-                return std::make_pair(next->numInOrder, index);
+                return std::make_optional(Point(next->numInOrder, index));
             }
             
             if (prev != status.end() && AreSegmentsCross((*prev), segments[index]))
-                return std::make_pair (prev->numInOrder, index);
+                return std::make_optional(Point(prev->numInOrder, index));
             
             positions[index] = status.insert(next, segments[index]);
         }
@@ -273,12 +283,12 @@ std::pair<long long, long long> FindIntersection(const std::vector<Segment>& seg
             auto next= Next(status, positions[index]);
             auto prev = Prev(status, positions[index]);
             if (next != status.end() && prev != status.end() && AreSegmentsCross((*next), (*prev)))
-                return std::make_pair(prev->numInOrder, next->numInOrder);
+                return std::make_optional(Point(prev->numInOrder, next->numInOrder));
             status.erase(positions[index]);
         }
     }
     
-    return std::make_pair(-1, -1);
+    return std::optional<Point>();
 }
 
 int main() {
@@ -293,10 +303,10 @@ int main() {
         segments.emplace_back(Segment(start, end, i));
     }
     
-    std::pair<long long, long long> intersection = FindIntersection(segments);
-    if (!(intersection.first == -1 && intersection.second == -1)) {
+    auto answer = FindIntersection(segments);
+    if (answer.has_value()) {
         std::cout << "YES" << std::endl;
-        std::cout << intersection.first + 1 << " " << intersection.second + 1 << std::endl;
+        std::cout << answer.value().x + 1 << " " << answer.value().y + 1 << std::endl;
     } else {
         std::cout << "NO" << std::endl;
     }
