@@ -3,10 +3,12 @@
 #include <string>
 #include <cmath>
 #include <iomanip>
+#include <tuple>
 
 const long double EPSILON = 0.000001;
+const int PRECISION = 6;
 
-enum Turn {
+enum class Turn {
     LEFT,
     RIGHT,
     COLLINEAR
@@ -23,22 +25,7 @@ public:
     Point(const Point&);
     
     Point& operator=(const Point&);
-    
-    friend bool operator ==(const Point&, const Point&);
-    friend bool operator !=(const Point&, const Point&);
-    
-    friend bool operator <(const Point&, const Point&);
-    friend bool operator >(const Point&, const Point&);
-    friend bool operator <=(const Point&, const Point&);
-    friend bool operator >=(const Point&, const Point&);
-    
-    friend Point& operator+=(Point&, const Point&);
-    friend Point operator+(const Point&, const Point&);
-    
-    friend Point& operator-=(Point&, const Point&);
-    friend Point operator-(const Point&, const Point&);
 
-    friend void PrintPoint(const Point&);
     
     long long x;
     long long y;
@@ -51,11 +38,11 @@ Point::Point(const Point& rhs) : x(rhs.x), y(rhs.y) {};
 Point& Point::operator=(const Point& rhs) {
     x = rhs.x;
     y = rhs.y;
-    return (*this);
+    return(*this);
 }
 
 bool operator ==(const Point& lhs, const Point& rhs) {
-    return (lhs.x == rhs.x) && (lhs.y == rhs.y);
+    return(lhs.x == rhs.x) &&(lhs.y == rhs.y);
 }
 
 bool operator !=(const Point& lhs, const Point& rhs) {
@@ -63,7 +50,7 @@ bool operator !=(const Point& lhs, const Point& rhs) {
 }
 
 bool operator <(const Point& lhs, const Point& rhs) {
-    return (lhs.x < rhs.x) || (lhs.x == rhs.x && lhs.y < rhs.y);
+    return  std::tie(lhs.x, lhs.y) < std::tie(rhs.x, rhs.y);
 }
 
 bool operator >(const Point& lhs, const Point& rhs) {
@@ -78,64 +65,90 @@ bool operator >=(const Point& lhs, const Point& rhs) {
     return !(lhs < rhs);
 }
 
-Point& operator+=(Point& lhs, const Point& rhs) {
+long double DistanceBetweenPoints(const Point& lhs, const Point& rhs) {
+    return sqrt((rhs.x - lhs.x) *(rhs.x - lhs.x) +
+               (rhs.y - lhs.y) *(rhs.y - lhs.y));
+}
+
+std::istream &operator>>(std::istream& input, Point& point) {
+   input >> point.x >> point.y;
+   return input;
+}
+
+std::ostream &operator<<(std::ostream &output, const Point& point) {
+    output << point.x << " " << point.y;
+    return output;
+}
+
+class Vector {
+public:
+    Vector(long long, long long);
+    Vector(const Point&, const Point&);
+    Vector& operator=(const Vector& rhs);
+    
+    static long long CrossProduct(const Vector& first, const Vector& second);
+    
+    long long x;
+    long long y;
+};
+
+Vector::Vector(long long x, long long y) : x(x), y(y) {};
+Vector::Vector(const Point& lhs, const Point& rhs) : x(rhs.x - lhs.x), y(rhs.y - lhs.y) {};
+
+long long Vector::CrossProduct(const Vector& lhs, const Vector& rhs) {
+    return lhs.x * rhs.y - rhs.x * lhs.y;
+}
+
+Vector& Vector::operator=(const Vector& rhs) {
+    x = rhs.x;
+    y = rhs.y;
+    return(*this);
+}
+
+Vector& operator+=(Vector& lhs, const Vector& rhs) {
     lhs.x += rhs.x;
     lhs.y += rhs.y;
     return lhs;
 }
 
-Point operator+(const Point& lhs, const Point& rhs) {
-    Point result = lhs;
+Vector operator+(const Vector& lhs, const Vector& rhs) {
+    Vector result = lhs;
     result += rhs;
     return result;
 }
 
-Point& operator-=(Point& lhs, const Point& rhs) {
+Vector& operator-=(Vector& lhs, const Vector& rhs) {
     lhs.x -= rhs.x;
     lhs.y -= rhs.y;
     return lhs;
 }
 
-Point operator-(const Point& lhs, const Point& rhs) {
-    Point result = lhs;
+Vector operator-(const Vector& lhs, const Vector& rhs) {
+    Vector result = lhs;
     result -= rhs;
     return result;
 }
 
-long double DistanceBetweenPoints(const Point& lhs, const Point& rhs) {
-    return sqrt((rhs.x - lhs.x) * (rhs.x - lhs.x) +
-                (rhs.y - lhs.y) * (rhs.y - lhs.y));
-}
-
-void PrintPoint(const Point& point) {
-    std::cout << point.x << " " << point.y << std::endl;
-}
-
-double CrossProduct(const Point& first, const Point& second) {
-    return first.x * second.y - second.x * first.y;
-}
-
 Turn Orientation(const Point& first, const Point& second, const Point& third) {
-    double turn = CrossProduct(second - first, third - first);
-    if (turn > EPSILON) {
-        return LEFT;
+    Vector lhs(first, second);
+    Vector rhs(first, third);
+    double turn = Vector::CrossProduct(lhs, rhs);
+    if(turn > EPSILON) {
+        return Turn::LEFT;
     }
-    if (turn < -EPSILON) {
-        return RIGHT;
+    if(turn < -EPSILON) {
+        return Turn::RIGHT;
     }
-    return COLLINEAR;
+    return Turn::COLLINEAR;
 }
 
 long double Angle(const Point& lhs, const Point& rhs) {
-    Point vector = rhs - lhs;
+    Vector vector(lhs, rhs);
     long double tg = atan2(vector.y, vector.x);
     if (tg <= -M_PI_2) {
         tg += 2 * M_PI;
     }
-//    if (vector.x < 0 && vector.y < 0) {
-//        tg += 2 * M_PI;
-//    }
-    //std::cout << "X : " << vector.x << " Y : " << vector.y << " atan : " << tg << std::endl;
+    
      return tg;
 }
 
@@ -176,7 +189,9 @@ std::vector<Point> MinkowskiAddition(const std::vector<Point>& firstPolygon, con
     auto i = 0, j = 0;
     
     while (i < firstSize || j < secondSize) {
-        result.emplace_back(processedFirstPolygon[i] + processedSecondPolygon[j]);
+        Point additionPoint(processedFirstPolygon[i].x + processedSecondPolygon[j].x,
+                            processedFirstPolygon[i].y + processedSecondPolygon[j].y);
+        result.emplace_back(additionPoint);
         
         if (i >= firstSize) {
             ++j;
@@ -196,7 +211,6 @@ std::vector<Point> MinkowskiAddition(const std::vector<Point>& firstPolygon, con
             ++i;
             ++j;
         }
-        //std::cout << std::endl;
     }
     
     return result;
@@ -214,9 +228,7 @@ long double PolygonArea(std::vector<Point>& polygon) {
 
 long double MixedArea(std::vector<Point>& lhs, std::vector<Point>& rhs) {
     std::vector<Point> minkowskiAddition = MinkowskiAddition(lhs, rhs);
-//    for (const auto& point : minkowskiAddition) {
-//        std::cout << point.x << " " << point.y << " " << std::endl;
-//    }
+    
     long double result =  PolygonArea(minkowskiAddition) - PolygonArea(lhs) - PolygonArea(rhs);
     return result / 2.0;
 }
@@ -239,7 +251,7 @@ int main() {
         std::cin >> x >> y;
         secondPolygon.emplace_back(Point(x, y));
     }
-    std::cout << std::setprecision(6) << std::fixed;
+    std::cout << std::setprecision(PRECISION) << std::fixed;
     std::cout << MixedArea(firstPolygon, secondPolygon) << std::endl;
     return 0;
 }
