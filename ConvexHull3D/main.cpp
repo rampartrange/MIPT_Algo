@@ -178,31 +178,37 @@ void ComputeBridgePoints(Point3D*& u, Point3D*& v) {
 }
 
 void ProcessEvent(Point3D*& u, Point3D*& v, int type, Movie& result, Point3D*& rightHullPtr, int& rightHullIndex, Point3D*& leftHullPtr, int& leftHullIndex) {
-    if (type == 0) {
-        if (leftHullPtr->x < u->x) {
-            result.emplace_back(leftHullPtr);
-        }
-        leftHullPtr->ProcessEvent();
-        ++leftHullIndex;
-    } else if (type == 1) {
-        if (rightHullPtr->x > v->x) {
-            result.emplace_back(rightHullPtr);
-        }
-        rightHullPtr->ProcessEvent();
-        ++rightHullIndex;
-    } else if (type == 2) {
-        result.emplace_back(u);
-        u = u->prev;
-    } else if (type == 3) {
-        u = u->next;
-        result.emplace_back(u);
-    } else if (type == 4) {
-        v = v->prev;
-        result.emplace_back(v);
-    } else if (type == 5) {
-        result.emplace_back(v);
-        v = v->next;
+    switch (type) {
+        case 1:
+            if (leftHullPtr->x < u->x) {
+                result.emplace_back(leftHullPtr);
+            }
+            leftHullPtr->ProcessEvent();
+            ++leftHullIndex;
+            break;
+        case 2:
+            if (rightHullPtr->x > v->x) {
+                result.emplace_back(rightHullPtr);
+            }
+            rightHullPtr->ProcessEvent();
+            ++rightHullIndex;
+            break;
+        case 3:
+            result.emplace_back(u);
+            u = u->prev;
+            break;
+        case 4:
+            v = v->prev;
+            result.emplace_back(v);
+            break;
+        case 5:
+            result.emplace_back(v);
+            v = v->next;
+            break;
+        default:
+            break;
     }
+
 }
 
 Movie MergeHulls(Movie& leftHull, Movie& rightHull, Point3D*& u, Point3D*& v) {
