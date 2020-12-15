@@ -1,91 +1,75 @@
 #include "FFT.hpp"
 
-size_t FindUpperDegreeOfTwo( size_t v )
+size_t FindUpperDegreeOfTwo( size_t base)
 {
-    size_t n = 1;
-    while ( n < v ) {
-        n *= 2;
+    size_t closestNumber = 1;
+    while ( closestNumber < base ) {
+        closestNumber *= 2;
     }
-    return n * 2;
+    return closestNumber * 2;
 }
 
-std::vector <cld> MakeComplexVector( const std::vector<int> & a, size_t n )
+std::vector <cld> MakeComplexVector( const std::vector<int> & intVector, size_t n )
 {
-    std::vector <cld> ca( n, cld( 0.0, 0.0 ) );
-    for ( size_t i = 0; i < a.size(); i++ ) {
-        ca[i] = cld( a[i], 0.0 );
+    std::vector <cld> complexVector( n, cld( 0.0, 0.0 ) );
+    auto size = intVector.size();
+    for ( size_t i = 0; i < size; i++ ) {
+        complexVector[i] = cld( intVector[i], 0.0 );
     }
-    return ca;
+    return complexVector;
 }
 
-std::vector <cld> MakeGeneralFFT(std::vector <cld> a, cld q)
+void MakeGeneralFFT(std::vector <cld>& complexVector, cld shift)
 {
-    if (a.size() == 1)
-        return a;
-    std::vector <cld> a0, a1;
-    for (size_t i = 0; i < a.size(); i += 2) {
-        a0.push_back(a[i]);
-        a1.push_back(a[i + 1]);
+    if (complexVector.size() == 1) {
+        return;
+    }
+    std::vector <cld> leftSide, rightSide;
+    auto size = complexVector.size();
+    for (size_t i = 0; i < size; i += 2) {
+        leftSide.push_back(complexVector[i]);
+        rightSide.push_back(complexVector[i + 1]);
     }
     
-    a0 = MakeGeneralFFT(a0, q * q);
-    a1 = MakeGeneralFFT(a1, q * q);
+    MakeGeneralFFT(leftSide, shift * shift);
+    MakeGeneralFFT(rightSide, shift * shift);
 
     cld w (1.0, 0.0);
     
-    for (size_t i = 0; i < a.size() / 2; i++) {
-        cld u = a0[i];
-        cld v = w * a1[i];
-        a[i] = u + v;
-        a[i + a.size() / 2] = u - v;
-        w *= q;
+    for (size_t i = 0; i < size / 2; i++) {
+        cld u = leftSide[i];
+        cld v = w * rightSide[i];
+        complexVector[i] = u + v;
+        complexVector[i +size / 2] = u - v;
+        w *= shift;
     }
     
-    return a;
 }
 
-std::vector <cld> MakeFFT(const std::vector <cld> & a)
+void MakeFFT(std::vector <cld> &complexVector)
 {
-    long double ang = 2.0 * M_PI / a.size();
-    return MakeGeneralFFT(a, cld(std::cosl(ang), std::sinl(ang)));
+    long double angle = 2.0 * M_PI / complexVector.size();
+    MakeGeneralFFT(complexVector, cld(std::cosl(angle), std::sinl(angle)));
 }
 
-std::vector <cld> MakeInverseFFT(std::vector <cld> a)
+void MakeInverseFFT(std::vector <cld>& complexVector)
 {
-    long double ang = 2.0 * M_PI / a.size();
-    a = MakeGeneralFFT(a, cld(std::cosl(ang), -std::sinl(ang)));
-    for (size_t i = 0; i < a.size(); i++) {
-        a[i] /= a.size();
+    auto size = complexVector.size();
+    long double angle = 2.0 * M_PI / size;
+    MakeGeneralFFT(complexVector, cld(std::cosl(angle), -std::sinl(angle)));
+    for (size_t i = 0; i < size; i++) {
+        complexVector[i] /= size;
     }
-    return a;
 }
 
-std::vector <int> MakeIntVector(const std::vector<cld> & a)
+std::vector <int> MakeIntVector(const std::vector<cld> & complexVector)
 {
-    std::vector <int> ans(a.size());
-    for (size_t i = 0; i < a.size(); i++) {
-        ans[i] = floorl(a[i].real() + 0.5);
+    auto size = complexVector.size();
+    std::vector <int> ans(size);
+    for (size_t i = 0; i < size; i++) {
+        ans[i] = floorl(complexVector[i].real() + 0.5);
     }
     return ans;
-}
-
-std::vector <int>  MultiplicatePolynoms( const std::vector <int> & a, const std::vector <int> & b )
-{
-    size_t n = FindUpperDegreeOfTwo( std::max(a.size(), b.size()) );
-    
-    std::vector <cld> ca = MakeComplexVector(a, n);
-    std::vector <cld> cb = MakeComplexVector(b, n);
-    
-    ca = MakeFFT(ca);
-    cb = MakeFFT(cb);
-    
-    for ( size_t i = 0; i < n; i++ ) {
-        ca[i] *= cb[i];
-    }
-    
-    std::vector <cld> cc = MakeInverseFFT(ca);
-    
-    return MakeIntVector(cc);
 }
 
 std::vector <int> ReadVector()

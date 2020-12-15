@@ -16,19 +16,17 @@
 
 using cld = std::complex <long double>;
 
-size_t FindUpperDegreeOfTwo( size_t v );
+size_t FindUpperDegreeOfTwo( size_t);
 
-std::vector <cld> MakeComplexVector( const std::vector<int> & a, size_t n );
+std::vector <cld> MakeComplexVector( const std::vector<int> &, size_t n);
 
-std::vector <cld> MakeGeneralFFT(std::vector <cld> a, cld q);
+void MakeGeneralFFT(std::vector <cld>&, cld);
 
-std::vector <cld> MakeFFT(const std::vector <cld> & a);
+void MakeFFT(std::vector <cld>&);
 
-std::vector <cld> MakeInverseFFT(std::vector <cld> a);
+void MakeInverseFFT(std::vector <cld>&);
 
-std::vector <int> MakeIntVector(const std::vector<cld> & a);
-
-std::vector <int>  MultiplicatePolynoms( const std::vector <int> & a, const std::vector <int> & b );
+std::vector <int> MakeIntVector(const std::vector<cld>&);
 
 std::vector <int> ReadVector();
 

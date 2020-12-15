@@ -16,7 +16,6 @@ WAVFile::WAVFile(const std::string& filename) {
     }
     
     fread(&header, sizeof(WAVHEADER), 1, file);
-    PrintHeader();
     
     data = new char[header.subchunk2Size];
     fread(data, header.subchunk2Size, 1, file);
@@ -45,14 +44,14 @@ char* WAVFile::GetData() const {
 
 void WAVFile::PrintHeader() const{
     std::cout << header.chunkId[0] << header.chunkId[1] << header.chunkId[2] << header.chunkId[3] << std::endl;
-    printf("Chunk size: %d\n", header.chunkSize);
+    std::cout << "Chunk size: " << header.chunkSize << std::endl;
     std::cout << header.format[0] << header.format[1] << header.format[2] << header.format[3] << std::endl;
     std::cout << header.subchunk1Id[0] << header.subchunk1Id[1] << header.subchunk1Id[2] << header.subchunk1Id[3] << std::endl;
-    printf("SubChunkId1: %d\n", header.subchunk1Size);
-    printf("Audio format: %d\n", header.audioFormat);
-    printf("Channels: %d\n", header.numChannels);
-    printf("Sample rate: %d\n", header.sampleRate);
-    printf("Bits per sample: %d\n", header.bitsPerSample);
+    std::cout << "SubChunkId1: " << header.subchunk1Size << std::endl;
+    std::cout << "Audio format: " << header.audioFormat << std::endl;
+    std::cout << "Channels: " <<  header.numChannels << std::endl;
+    std::cout << "Sample rate: " << header.sampleRate << std::endl;
+    std::cout << "Bits per sample: " << header.bitsPerSample << std::endl;
     std::cout << header.subchunk2Id[0] << header.subchunk2Id[1] << header.subchunk2Id[2] << header.subchunk2Id[3] << std::endl;
 }
 
@@ -75,14 +74,14 @@ void WAVFile::CompressData(double ratio) {
     dataVector.resize(n);
   
     std::vector<cld> complexVector = MakeComplexVector(dataVector, n);
-    complexVector = MakeFFT(complexVector);
+    MakeFFT(complexVector);
 
 
     for (int i = static_cast<int>(n * ratio); i < n; ++i) {
         complexVector[i] = 0;
     }
 
-    std::vector<cld> reversedVector = MakeInverseFFT(complexVector);
-    dataVector = MakeIntVector(reversedVector);
+    MakeInverseFFT(complexVector);
+    dataVector = MakeIntVector(complexVector);
     TransformData(dataVector);
 } 

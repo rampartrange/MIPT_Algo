@@ -6,9 +6,9 @@ int main() {
     std::string input;
     std::cin >> input;
 
-    WavFile file(input);
+    WAVFile file(input);
 
-    file.CompressData(0.2);    
+    file.CompressData(0.95);    
 
     std::string output;
     std::cin >> output;
