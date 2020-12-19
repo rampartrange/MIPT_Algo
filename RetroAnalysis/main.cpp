@@ -5,7 +5,7 @@
 #include <string>
 #include <algorithm>
 
-enum CellType {
+enum class CellType : char {
     EMPTY = '0',
     WALL = '1',
     ESCAPEE_CELL = '2',
@@ -32,35 +32,52 @@ public:
     bool IsCorrect(PlayerTurn) const;
     int ComputeState() const;
     
+    int GetX() const;
+    int GetY() const;
+
+    constexpr static int GetXSize() {
+        return XSize;
+    }
+    constexpr static int GetYSize() {
+        return YSize;
+    }
+    
+private:
     int x;
     int y;
     
-    static const int XSize;
-    static const int YSize;
+    constexpr static int XSize = 8;
+    constexpr static int YSize = 8;
 };
-
-const int Coordinate::XSize = 8;
-const int Coordinate::YSize = 8;
 
 int Coordinate::ComputeState() const {
     return (y * XSize + x);
 }
 
-Coordinate operator+(const Coordinate& lhs, const Coordinate& rhs) {
-    return Coordinate(lhs.x + rhs.x, lhs.y+ rhs.y);
+int Coordinate::GetX() const {
+    return x;
 }
 
-Coordinate operator-(const Coordinate& lhs, const Coordinate& rhs) {
-    return Coordinate(lhs.x - rhs.x, lhs.y - rhs.y);
-}
-
-bool operator==(const Coordinate& lhs, const Coordinate& rhs) {
-    return lhs.x == rhs.x && lhs.y == rhs.y;
+int Coordinate::GetY() const {
+    return y;
 }
 
 bool Coordinate::IsCorrect(PlayerTurn turn) const {
     return (0 <= x && x < XSize && 0 <= y && y < YSize + (turn == PlayerTurn::ESCAPEE) ? 1 : 0);
 }
+
+Coordinate operator+(const Coordinate& lhs, const Coordinate& rhs) {
+    return Coordinate(lhs.GetX() + rhs.GetX(), lhs.GetY()+ rhs.GetY());
+}
+
+Coordinate operator-(const Coordinate& lhs, const Coordinate& rhs) {
+    return Coordinate(lhs.GetX() - rhs.GetX(), lhs.GetY() - rhs.GetY());
+}
+
+bool operator==(const Coordinate& lhs, const Coordinate& rhs) {
+    return lhs.GetX() == rhs.GetX() && lhs.GetY() == rhs.GetY();
+}
+
 
 class Vertex {
 public:
@@ -71,7 +88,6 @@ public:
                     escapee(escapee),
                     turn(turn) {}
     
-    
     Coordinate terminator;
     Coordinate escapee;
     int turn;
@@ -81,7 +97,7 @@ using vertexArray3D = std::vector< std::vector< std::vector< Vertex>>>;
 
 class GameGraph {
 public:
-    explicit GameGraph(std::vector<std::string> field);
+    explicit GameGraph(std::vector<std::vector<CellType>> field);
     
     int DefineWinner();
     
@@ -108,7 +124,7 @@ private:
     
     Coordinate terminatorStart;
     Coordinate escapeeStart;
-    std::vector<std::string> field;
+    std::vector<std::vector<CellType>> field;
     
     
     std::pair<bool, bool> CheckWin(Coordinate coord, std::vector<bool>& been) const;
@@ -129,7 +145,7 @@ private:
 
 std::pair<bool, bool> GameGraph::CheckWin(Coordinate coord, std::vector<bool>& been) const {
     
-    if (field[coord.y][coord.x] == WALL) {
+    if (field[coord.GetY()][coord.GetX()] == (CellType::WALL)) {
         return {false, false};
     }
     
@@ -139,7 +155,7 @@ std::pair<bool, bool> GameGraph::CheckWin(Coordinate coord, std::vector<bool>& b
     
     std::pair<bool, bool> result = {false, false};
     
-    if (coord.y == Coordinate::YSize) {
+    if (coord.GetY() == Coordinate::GetYSize()) {
         result.second = true;
     }
     
@@ -166,15 +182,15 @@ std::pair<bool, bool> GameGraph::CheckWin(Coordinate coord, std::vector<bool>& b
 }
 
 bool GameGraph::CanBeShot(const Coordinate& terminator, const Coordinate& escapee) const {
-    if (field[escapee.y][escapee.x] == EXIT) {
+    if (field[escapee.GetY()][escapee.GetX()] == (CellType::EXIT)) {
         return false;
-    } else if (terminator.x == escapee.x) {
+    } else if (terminator.GetX() == escapee.GetX()) {
         return CanBeShotX(terminator, escapee);
-    } else if (terminator.y == escapee.y) {
+    } else if (terminator.GetY() == escapee.GetY()) {
         return CanBeShotY(terminator, escapee);
-    } else if (terminator.x - terminator.y == escapee.x - escapee.y) {
+    } else if (terminator.GetX() - terminator.GetY() == escapee.GetX() - escapee.GetY()) {
         return CanBeShotMainDiagonal(terminator, escapee);
-    } else if (terminator.x + terminator.y == escapee.x + escapee.y) {
+    } else if (terminator.GetX() + terminator.GetY() == escapee.GetX() + escapee.GetY()) {
         return CanBeShotSideDiagonal(terminator, escapee);
     }
     return false;
@@ -182,10 +198,10 @@ bool GameGraph::CanBeShot(const Coordinate& terminator, const Coordinate& escape
 
 
 bool GameGraph::CanBeShotX(const Coordinate& terminator, const Coordinate& escapee) const {
-    int x = terminator.x;
-    int max_y = std::max(terminator.y, escapee.y);
-    for (int y = std::min(terminator.y, escapee.y); y <= max_y; ++y) {
-        if (field[y][x] == WALL) {
+    int x = terminator.GetX();
+    int max_y = std::max(terminator.GetY(), escapee.GetY());
+    for (int y = std::min(terminator.GetY(), escapee.GetY()); y <= max_y; ++y) {
+        if (field[y][x] == (CellType::WALL)) {
             return false;
         }
     }
@@ -194,10 +210,10 @@ bool GameGraph::CanBeShotX(const Coordinate& terminator, const Coordinate& escap
 
 
 bool GameGraph::CanBeShotY(const Coordinate& terminator, const Coordinate& escapee) const {
-    int y = terminator.y;
-    int max_x = std::max(terminator.x, escapee.x);
-    for (int x = std::min(terminator.x, escapee.x); x <= max_x; ++x) {
-        if (field[y][x] == WALL) {
+    int y = terminator.GetY();
+    int max_x = std::max(terminator.GetX(), escapee.GetX());
+    for (int x = std::min(terminator.GetX(), escapee.GetX()); x <= max_x; ++x) {
+        if (field[y][x] == (CellType::WALL)) {
             return false;
         }
     }
@@ -206,10 +222,10 @@ bool GameGraph::CanBeShotY(const Coordinate& terminator, const Coordinate& escap
 
 
 bool GameGraph::CanBeShotMainDiagonal(const Coordinate& terminator, const Coordinate& escapee) const {
-    int diff = terminator.x - terminator.y;
-    int max_x = std::max(terminator.x, escapee.x);
-    for (int x = std::min(terminator.x, escapee.x); x <= max_x; ++x) {
-        if (field[x - diff][x] == WALL) {
+    int diff = terminator.GetX() - terminator.GetY();
+    int max_x = std::max(terminator.GetX(), escapee.GetX());
+    for (int x = std::min(terminator.GetX(), escapee.GetX()); x <= max_x; ++x) {
+        if (field[x - diff][x] == (CellType::WALL)) {
             return false;
         }
     }
@@ -218,10 +234,10 @@ bool GameGraph::CanBeShotMainDiagonal(const Coordinate& terminator, const Coordi
 
 
 bool GameGraph::CanBeShotSideDiagonal(const Coordinate& terminator, const Coordinate& escapee) const {
-    int sum = terminator.x + terminator.y;
-    int max_x = std::max(terminator.x, escapee.x);
-    for (int x = std::min(terminator.x, escapee.x); x <= max_x; ++x) {
-        if (field[sum - x][x] == WALL) {
+    int sum = terminator.GetX() + terminator.GetY();
+    int max_x = std::max(terminator.GetX(), escapee.GetX());
+    for (int x = std::min(terminator.GetX(), escapee.GetX()); x <= max_x; ++x) {
+        if (field[sum - x][x] == (CellType::WALL)) {
             return false;
         }
     }
@@ -256,7 +272,8 @@ void GameGraph::DefineStartPositions(int terminatorIndex, int escapeeIndex, cons
                 }
 
                 Coordinate player_coord = (turn == ESCAPEE ? escapeeCoord : terminatorCoord) + Coordinate(d_x, d_y);
-                if (player_coord.IsCorrect(turn == ESCAPEE ? ESCAPEE : TERMINATOR) && field[player_coord.y][player_coord.x] != WALL) {
+                if (player_coord.IsCorrect(turn == ESCAPEE ? ESCAPEE : TERMINATOR) && field[player_coord.GetY()][player_coord.GetX()] !=
+                    (CellType::WALL)) {
                     
                     if (turn == ESCAPEE) {
                         edgesTerminator[terminatorIndex][player_coord.ComputeState()].emplace_back(terminatorCoord, escapeeCoord, turn);
@@ -274,28 +291,33 @@ void GameGraph::DefineStartPositions(int terminatorIndex, int escapeeIndex, cons
 void GameGraph::InitializeGameStatus() {
     for (int terminatorIndex = 0; terminatorIndex < terminatorNum; ++terminatorIndex) {
 
-        Coordinate terminatorCoord(terminatorIndex % Coordinate::XSize, terminatorIndex / Coordinate::XSize);
-        if (field[terminatorCoord.y][terminatorCoord.x] == WALL) {
+        Coordinate terminatorCoord(terminatorIndex % Coordinate::GetXSize(), terminatorIndex / Coordinate::GetXSize());
+        if (field[terminatorCoord.GetY()][terminatorCoord.GetX()] ==
+            (CellType::WALL)) {
             continue;
         }
-        if (terminatorStart.x == -1 && field[terminatorCoord.y][terminatorCoord.x] == TERMINATOR_CELL) {
+        if (terminatorStart.GetX() == -1 && field[terminatorCoord.GetY()][terminatorCoord.GetX()]
+            == (CellType::TERMINATOR_CELL)) {
             terminatorStart = terminatorCoord;
         }
 
         for (int escapeeIndex = 0; escapeeIndex < escapeeNum; ++escapeeIndex) {
 
-            Coordinate escapeeCoord(escapeeIndex % Coordinate::XSize, escapeeIndex / Coordinate::XSize);
-            if (field[escapeeCoord.y][escapeeCoord.x] == WALL) {
+            Coordinate escapeeCoord(escapeeIndex % Coordinate::GetXSize(), escapeeIndex / Coordinate::GetXSize());
+            if (field[escapeeCoord.GetY()][escapeeCoord.GetX()] ==
+                (CellType::WALL)) {
                 continue;
             }
-            if (escapeeStart.x == -1 && field[escapeeCoord.y][escapeeCoord.x] == ESCAPEE_CELL) {
+            if (escapeeStart.GetX() == -1 && field[escapeeCoord.GetY()][escapeeCoord.GetX()] ==
+                (CellType::ESCAPEE_CELL)) {
                 escapeeStart = escapeeCoord;
             }
 
             if (CanBeShot(terminatorCoord, escapeeCoord)) {
                 gameStatusTerminator[terminatorIndex][escapeeIndex] = WIN;
                 gameStatusEscapee[terminatorIndex][escapeeIndex] = LOSE;
-            } else if (field[escapeeCoord.y][escapeeCoord.x] == EXIT) {
+            } else if (field[escapeeCoord.GetY()][escapeeCoord.GetX()] ==
+                       (CellType::EXIT)) {
                 gameStatusTerminator[terminatorIndex][escapeeIndex] = LOSE;
                 gameStatusEscapee[terminatorIndex][escapeeIndex] = WIN;
             }
@@ -340,12 +362,12 @@ void GameGraph::ComputeEdges() {
 }
 
 
-GameGraph::GameGraph(std::vector<std::string> field) : field(std::move(field)) {
+GameGraph::GameGraph(std::vector<std::vector<CellType>> field) : field(std::move(field)) {
 
-    terminatorNum = Coordinate::XSize * Coordinate::YSize;
-    escapeeNum = Coordinate::XSize * (Coordinate::YSize + 1);
+    terminatorNum = Coordinate::GetXSize() * Coordinate::GetYSize();
+    escapeeNum = Coordinate::GetXSize() * (Coordinate::GetYSize() + 1);
 
-    this->field.emplace_back(Coordinate::XSize, EXIT);
+    this->field.emplace_back(Coordinate::GetXSize(), CellType::EXIT);
 
     InitializeVectors();
 
@@ -381,7 +403,7 @@ void GameGraph::DFS(int terminatorIndex, int escapeeIndex, int turn) {
 }
 
 int GameGraph::DefineWinner() {
-    std::vector<bool> been(Coordinate::XSize * (Coordinate::YSize + 1), false);
+    std::vector<bool> been(Coordinate::GetXSize() * (Coordinate::GetYSize() + 1), false);
     
     std::pair<bool, bool> isEscapeeWin = CheckWin(escapeeStart, been);
     if (isEscapeeWin.second == false) {
@@ -394,11 +416,39 @@ int GameGraph::DefineWinner() {
     return gameStatus(ESCAPEE)[terminatorStart.ComputeState()][escapeeStart.ComputeState()];
 }
 
+CellType DefineCellType(char cell) {
+    CellType answer;
+    switch (cell) {
+        case '0':
+            answer = CellType::EMPTY;
+            break;
+        case '1':
+            answer = CellType::WALL;
+            break;
+        case '2':
+            answer = CellType::ESCAPEE_CELL;
+            break;
+        case '3':
+            answer = CellType::TERMINATOR_CELL;
+            break;
+        default:
+            answer = CellType::EXIT;
+            break;
+    }
+    return answer;
+}
+
 int main() {
 
-    std::vector<std::string> field(Coordinate::YSize);
-    for (int i = 0; i < Coordinate::YSize; ++i) {
-        std::cin >> field[i];
+    std::vector<std::vector<CellType>> field;
+    field.resize(Coordinate::GetYSize());
+    for (int i = 0; i < Coordinate::GetYSize(); ++i) {
+        char cell;
+        field[i].resize(Coordinate::GetXSize());
+        for (int j  = 0; j < Coordinate::GetXSize(); ++j) {
+            std::cin >> cell;
+            field[i][j] = (DefineCellType(cell));
+            }
     }
     
     GameGraph graph(field);
