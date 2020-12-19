@@ -11,7 +11,7 @@ WAVFile::WAVFile(const std::string& filename) {
     FILE *file = fopen(filename.c_str(), "rb");
     if (!file)
     {
-      std::cout << "Failed open file";
+      std::cerr << "Failed open file";
       exit(1);
     }
     

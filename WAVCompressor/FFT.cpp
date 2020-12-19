@@ -26,6 +26,8 @@ void MakeGeneralFFT(std::vector <cld>& complexVector, cld shift)
     }
     std::vector <cld> leftSide, rightSide;
     auto size = complexVector.size();
+    leftSide.reserve(size);
+    rightSide.reserve(size);
     for (size_t i = 0; i < size; i += 2) {
         leftSide.push_back(complexVector[i]);
         rightSide.push_back(complexVector[i + 1]);
