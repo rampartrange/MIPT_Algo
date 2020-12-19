@@ -13,12 +13,12 @@ enum class CellType : char {
     EXIT = '4'
 };
 
-enum PlayerTurn {
+enum class PlayerTurn : int {
     TERMINATOR = 0,
     ESCAPEE = 1
 };
 
-enum GameState {
+enum GameState : int {
     WIN = 1,
     LOSE = -1,
     TIE = 0
@@ -63,7 +63,7 @@ int Coordinate::GetY() const {
 }
 
 bool Coordinate::IsCorrect(PlayerTurn turn) const {
-    return (0 <= x && x < XSize && 0 <= y && y < YSize + (turn == PlayerTurn::ESCAPEE) ? 1 : 0);
+    return (0 <= x && x < XSize && 0 <= y && y < YSize + (turn == (PlayerTurn::ESCAPEE)) ? 1 : 0);
 }
 
 Coordinate operator+(const Coordinate& lhs, const Coordinate& rhs) {
@@ -169,7 +169,7 @@ std::pair<bool, bool> GameGraph::CheckWin(Coordinate coord, std::vector<bool>& b
             
             Coordinate new_coord = coord + Coordinate(d_x, d_y);
             
-            if (new_coord.IsCorrect(ESCAPEE) && been[new_coord.ComputeState()] == false) {
+            if (new_coord.IsCorrect((PlayerTurn::ESCAPEE)) && been[new_coord.ComputeState()] == false) {
                 std::pair<bool, bool> curr_result = CheckWin(new_coord, been);
                 
                 result.first |= curr_result.first;
@@ -258,7 +258,7 @@ std::vector<std::vector<int>>& GameGraph::degree(int turn) {
 }
 
 void GameGraph::DefineStartPositions(int terminatorIndex, int escapeeIndex, const Coordinate& terminatorCoord, const Coordinate& escapeeCoord) {
-    for (int turn = TERMINATOR; turn <= ESCAPEE; ++turn) {
+    for (int turn = static_cast<int>(PlayerTurn::TERMINATOR); turn <= static_cast<int>(PlayerTurn::ESCAPEE); ++turn) {
 
         if (gameStatus(turn)[terminatorIndex][escapeeIndex] != TIE) {
             continue;
@@ -271,11 +271,13 @@ void GameGraph::DefineStartPositions(int terminatorIndex, int escapeeIndex, cons
                     continue;
                 }
 
-                Coordinate player_coord = (turn == ESCAPEE ? escapeeCoord : terminatorCoord) + Coordinate(d_x, d_y);
-                if (player_coord.IsCorrect(turn == ESCAPEE ? ESCAPEE : TERMINATOR) && field[player_coord.GetY()][player_coord.GetX()] !=
+                Coordinate player_coord = (turn == static_cast<int>(PlayerTurn::ESCAPEE) ? escapeeCoord : terminatorCoord) + Coordinate(d_x, d_y);
+                if (player_coord.IsCorrect(turn == static_cast<int>(PlayerTurn::ESCAPEE) ?
+                                           (PlayerTurn::ESCAPEE) : (PlayerTurn::TERMINATOR)) &&
+                                           field[player_coord.GetY()][player_coord.GetX()] !=
                     (CellType::WALL)) {
                     
-                    if (turn == ESCAPEE) {
+                    if (turn == static_cast<int>(PlayerTurn::ESCAPEE)) {
                         edgesTerminator[terminatorIndex][player_coord.ComputeState()].emplace_back(terminatorCoord, escapeeCoord, turn);
                     } else {
                         edgesEscapee[player_coord.ComputeState()][escapeeIndex].emplace_back(terminatorCoord, escapeeCoord, turn);
@@ -331,7 +333,7 @@ void GameGraph::InitializeGameStatus() {
 }
 
 void GameGraph::InitializeVectors() {
-    for (int i = TERMINATOR; i <= ESCAPEE; ++i) {
+    for (int i = static_cast<int>(PlayerTurn::TERMINATOR); i <= static_cast<int>(PlayerTurn::ESCAPEE); ++i) {
         edges(i).resize(terminatorNum);
         gameStatus(i).resize(terminatorNum);
         used(i).resize(terminatorNum);
@@ -349,10 +351,10 @@ void GameGraph::InitializeVectors() {
 void GameGraph::ComputeEdges() {
     for (int terminatorIndex = 0; terminatorIndex < terminatorNum; ++terminatorIndex) {
         for (int escapeeIndex = 0; escapeeIndex < escapeeNum; ++escapeeIndex) {
-            for (int turn = TERMINATOR; turn <= ESCAPEE; ++turn) {
+            for (int turn = static_cast<int>(PlayerTurn::TERMINATOR); turn <= static_cast<int>(PlayerTurn::ESCAPEE); ++turn) {
                 if (!used(turn)[terminatorIndex][escapeeIndex] && gameStatus(turn)[terminatorIndex][escapeeIndex] != TIE) {
                     DFS(terminatorIndex, escapeeIndex, turn);
-                    if (gameStatus(ESCAPEE)[terminatorStart.ComputeState()][escapeeStart.ComputeState()] != TIE) {
+                    if (gameStatus(static_cast<int>(PlayerTurn::ESCAPEE))[terminatorStart.ComputeState()][escapeeStart.ComputeState()] != TIE) {
                         return;
                     }
                 }
@@ -373,7 +375,7 @@ GameGraph::GameGraph(std::vector<std::vector<CellType>> field) : field(std::move
 
     InitializeGameStatus();
     
-    if (gameStatus(ESCAPEE)[terminatorStart.ComputeState()][escapeeStart.ComputeState()] != TIE) {
+    if (gameStatus(static_cast<int>(PlayerTurn::ESCAPEE))[terminatorStart.ComputeState()][escapeeStart.ComputeState()] != TIE) {
         return;
     }
 
@@ -413,7 +415,7 @@ int GameGraph::DefineWinner() {
         return 1;
     }
     
-    return gameStatus(ESCAPEE)[terminatorStart.ComputeState()][escapeeStart.ComputeState()];
+    return gameStatus(static_cast<int>(PlayerTurn::ESCAPEE))[terminatorStart.ComputeState()][escapeeStart.ComputeState()];
 }
 
 CellType DefineCellType(char cell) {
