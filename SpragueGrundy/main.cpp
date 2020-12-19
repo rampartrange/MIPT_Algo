@@ -2,10 +2,11 @@
 #include <vector>
 #include <algorithm>
 #include <set>
+#include <unordered_set>
 #include <string>
 
 int Mex(const std::vector<int>& calculatedGame) {
-    std::set<int> mexSet(calculatedGame.begin(), calculatedGame.end());
+    std::unordered_set<int> mexSet(calculatedGame.begin(), calculatedGame.end());
     for (auto i = 0; ; ++i) {
         if (!mexSet.count(i)) {
             return i;
@@ -42,10 +43,10 @@ std::set<int> GetWinningMoves(int n) {
     SG[3] = 2;
     for (int i = 4; i <= n; ++i) {
         std::vector<int> currentValue;
-        currentValue.push_back(SG[i-1]);
-        currentValue.push_back(SG[i-2]);
+        currentValue.push_back(SG[i - 1]);
+        currentValue.push_back(SG[i - 2]);
         for (int j = 3; j <= i - 2; ++j) {
-            currentValue.push_back(SG[j-1] ^ SG[i-j]);
+            currentValue.push_back(SG[j - 1] ^ SG[i - j]);
         }
         SG[i] = Mex(currentValue);
     }
